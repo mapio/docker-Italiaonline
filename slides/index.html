@@ -13,7 +13,7 @@
     <a class="github-fork-ribbon" href="https://github.com/mapio/docker-Italiaonline" data-ribbon="Fork me on GitHub" title="Fork me on GitHub">Fork me on GitHub</a>
     <textarea id="source">
 
-class: title, center
+class: title
 
 Docker<br/>a lot for **Dev**<br/>just a bit for **Ops**
 
@@ -37,20 +37,20 @@ Issues when developing complex software, many:
 
 Why not let the developers take care of (some) operations aspects?
 
-* the "devops" approach!
+* the DevOps approach!
 
 ---
 
 ## Desiderata
 
-From the **dev** point of view:
+From the **Dev** point of view:
 
 * predictability,
 * replicability,
 * versioning,
 * lightweight.
 
-From the **ops** point of view:
+From the **Ops** point of view:
 
 * fault tolerance,
 * portability,
@@ -91,13 +91,13 @@ Filesystem
 
 ---
 
-class: center, middle
+class: title
 
-# Basic concepts
+.small[*Images* and *containers*]
 
 ---
 
-## **image** (filesystem)
+## A filesystem… (*image*)
 
 * a DAG of copy-on-write **read-only** filesystems,
 * obtained by: **pull** (from a *hub*, also **push**), **build**, or **commit**.
@@ -105,28 +105,28 @@ class: center, middle
 ```bash
 $ docker pull hello-world
 ...
-Digest: sha256:be0cd392e45be79ffeffa6b05338b98ebb16c87b255f48e297ec7f98e123905c
+Digest: sha256:d58e752213a51785838f9eed2b7a498ffa1cb3aa7f946dda11af39286c3db9a9
 Status: Downloaded newer image for hello-world:latest
 
 $ docker images
 REPOSITORY  TAG    IMAGE ID     CREATED      SIZE
-hello-world latest f2a91732366c 2 weeks ago  1.85kB
+hello-world latest bf756fb1ae65 6 months ago 13.3kB
 ```
 
 ---
 
-## **container** (filesystem/process)
+## … and a process (*container*)
 
 * an **image** plus a **writable** *copy-on-write* layer,
 * (explicitly) obtained by: **create**.
 
 ```bash
-$ docker create --name dt-image hello-world
-8c17068f0c805e50778522edecbc15e7e47edd4ba961adfba7da05d403d65e12
+$ docker create --name di-image hello-world
+6ee4391b6c2c6b5ce07e2c162e691de5481b35083973ec5bcfc03a1c6c52b7b4
 
 $ docker ps -a
 CONTAINER ID  IMAGE        COMMAND   CREATED        STATUS  PORTS  NAMES
-8c17068f0c80  hello-world  "/hello"  5 seconds ago  Created        dt-image
+f65d9f282056  hello-world  "/hello"  5 seconds ago  Created        di-image
 ```
 
 * (implicitly) obtained by: **run** = (**create** + **start**),
@@ -138,7 +138,7 @@ Hello from Docker.
 
 $ docker ps -a
 CONTAINER ID  IMAGE        COMMAND   CREATED         STATUS     PORTS  NAMES
-8c17068f0c80  hello-world  "/hello"  25 seconds ago  Created           dt-image
+8c17068f0c80  hello-world  "/hello"  25 seconds ago  Created           di-image
 7f937e7c88dc  hello-world  "/hello"  5 seconds ago   Exited (0)        silly_yalow
 ```
 
@@ -153,52 +153,23 @@ Take care of your *images* by
 
 Take care of your *containers* by
 
-* list (**ps**), inspect (**inspect**), remove (**rm**) – *filesystem*,
-* **start**, **stop**, **kill**, **pause**, **unpause** – *processes*.
+* list (**ps**), inspect (**inspect**), remove (**rm**) — *filesystem*,
+* **start**, **stop**, **kill**, **pause**, **unpause** — *processes*.
 
 ---
 
-class: center, middle
+class: title
 
-# Producing *images*
-
----
-
-## **build**
-
-* write a `Dockerfile` to describe build steps and configurations…
-
-```Dockerfile
-FROM python:2.7-alpine
-LABEL maintainer="santini@di.unimi.it"
-WORKDIR /app
-ADD . /app
-RUN pip install -r requirements.txt
-EXPOSE 80
-CMD ["python", "app.py"]
-```
-
-* and **build**!
-
-```bash
-$ docker build -t mapio/dt-example .
-...
-
-$ docker images
-REPOSITORY        TAG        IMAGE ID     CREATED        SIZE
-mapio/dt-example  latest     11a0c2a15c01 12 minutes ago 213.4 MB
-python            3.7-alpine 8922d588eec6 4 weeks ago      98.4MB
-hello-world       latest     c54a2cc56cbb 4 months ago   1.848 kB
-```
+.small[Producing *images*]
 
 ---
 
-## **commit**
+## Worst practice (*commit*)
 
 * run (and *modify*) a container…
 
 ```bash
-$ docker run -it --name dt-busybox busybox:musl
+$ docker run -it --name di-busybox busybox:musl
 Unable to find image 'busybox:musl' locally
 ...
 Status: Downloaded newer image for busybox:musl
@@ -209,26 +180,49 @@ Status: Downloaded newer image for busybox:musl
 * and **commit**!
 
 ```bash
-$ docker commit dt-busybox dt/busybox:0.1
-sha256:b57102c04ff0d2d0842a1ab7637d2ee594a3e76463b29af6e2eca9a2b27f67e6
+$ docker commit di-busybox di/busybox:0.1
+sha256:044aeb8cc3d70516f6a2b387ed9cd17fed276b0ac4065d479deaa53688b01f66
 
 $ docker images
 REPOSITORY   TAG        IMAGE ID     CREATED        VIRTUAL SIZE
-dt/busybox   0.1        b57102c04ff0 15 seconds ago 1.213 MB
+di/busybox   0.1        b57102c04ff0 15 seconds ago 1.213 MB
 busybox      musl       733eb3059dce 5 weeks ago    1.213 MB
-```
-
-* you can **tag** a version with `latest` to make it the default one
-
-```bash
-$ docker tag busybox:musl busybox:latest
 ```
 
 ---
 
-## **push**
+## In a reproducible way (*build*)
 
-* choose a public registry, create an account and authenticate
+* write a `Dockerfile` to describe build steps and configurations…
+
+```Dockerfile
+FROM python:3.8-alpine
+LABEL maintainer="santini@di.unimi.it"
+WORKDIR /app
+ADD . /app
+RUN pip install --trusted-host pypi.python.org -r requirements.txt
+EXPOSE 80
+CMD ["python", "app.py"]
+```
+
+* and **build**!
+
+```bash
+$ docker build -t mapio/di-example .
+...
+
+$ docker images
+REPOSITORY        TAG        IMAGE ID     CREATED        SIZE
+mapio/di-example  latest     11a0c2a15c01 12 minutes ago 213.4 MB
+python            3.7-alpine 8922d588eec6 4 weeks ago      98.4MB
+hello-world       latest     c54a2cc56cbb 4 months ago   1.848 kB
+```
+
+---
+
+## Publishing images (*push*)
+
+* choose a (public) registry, create an account and authenticate
 
 ```bash
 $ docker login
@@ -240,11 +234,11 @@ Login Succeeded
 
 ```
 
-* *push* your image to make it available to other devs (or in production):
+* **push** your image to make it available to other devs (or in production):
 
 ```bash
-$ docker push mapio/dt-example
-The push refers to a repository [docker.io/mapio/dt-example]
+$ docker push mapio/di-example
+The push refers to a repository [docker.io/mapio/di-example]
 455deb6fe734: Pushed
 b4bac53253fd: Pushed
 b3fec61839f1: Pushed
@@ -253,9 +247,9 @@ latest: digest: sha256:75d28a5d629f7f1d2e2983839aad size: 1785
 
 ---
 
-class: center, middle
+class: title
 
-# Running *containers*
+.small[Running *containers*]
 
 ---
 
@@ -265,7 +259,7 @@ class: center, middle
 
 ```bash
 $ docker run --rm busybox date
-Sun Dec 15 20:42:07 UTC 2019
+Sun Jul  5 14:34:41 UTC 2020
 ```
 
 * *attached*
@@ -273,21 +267,16 @@ Sun Dec 15 20:42:07 UTC 2019
 ```bash
 $ docker run -it busybox
 / # date
-Sun Dec 15 20:42:29 UTC 2019
+Sun Jul  5 14:34:59 UTC 2020
 / # exit
 ```
 
 * *daemonized*
 
 ```bash
-$ docker run --name dt-daemon -d busybox \
+$ docker run --name di-daemon -d busybox \
     sh -c 'while true; do date; sleep 10; done'
-386b5edd9441de261dfa578ee48b1875ae2690b28fafd57c4d5dc6ea8115ae22
-
-$ docker logs dt-daemon
-Sun Dec 15 20:42:47 UTC 2019
-Sun Dec 15 20:42:57 UTC 2019
-Sun Dec 15 20:43:07 UTC 2019
+e2f98a4ab4b4de37b533a36d2ff310b1220d2f1facfec4b4b93c8635994b34a1
 ```
 
 ---
@@ -295,18 +284,27 @@ Sun Dec 15 20:43:07 UTC 2019
 ## Keeping in touch
 
 * obtain **logs** of *running* and *terminated* instances,
+
+```bash
+$ docker logs di-daemon
+Sun Jul  5 14:35:21 UTC 2020
+Sun Jul  5 14:35:31 UTC 2020
+Sun Jul  5 14:35:41 UTC 2020
+```
+
+
 * **attach** to the stdin/out of the *running* (process in a) container.
 
 ```bash
-$ docker attach --sig-proxy=false dt-daemon
-Sun Dec 15 21:32:31 UTC 2019
-Sun Dec 15 21:32:41 UTC 2019
+$ docker attach --sig-proxy=false di-daemon
+Sun Jul  5 14:36:11 UTC 2020
+^C
 ```
 
 * **exec** another process in a *running* container
 
 ```bash
-$ docker exec dt-daemon ps -a
+$ docker exec di-daemon ps -a
 
 PID   USER     TIME   COMMAND
     1 root       0:00 sh -c while true; do date; sleep 10; done
@@ -316,9 +314,9 @@ PID   USER     TIME   COMMAND
 
 ---
 
-class: center, middle
+class: title
 
-# Persistence and Communication
+.small[*Persistence* and *communication*]
 
 ---
 
@@ -327,16 +325,16 @@ class: center, middle
 A road to persistence: just **create** a *volume* with a *name*
 
 ```bash
-$ docker volume create dt-vol-n
+$ docker volume create di-vol-n
 ```
 
 As before, you can (even with *ephemeral* runs), read/write
 
 ```bash
-$ docker run --rm --volume dt-vol-n:/data busybox sh -c 'date > /data/file.txt'
+$ docker run --rm --volume di-vol-n:/data busybox sh -c 'date > /data/file.txt'
 
-$ docker run --rm --volume dt-vol-n:/data busybox sh -c 'cat /data/file.txt'
-Sun Dec 15 20:35:41 UTC 2019
+$ docker run --rm --volume di-vol-n:/data busybox sh -c 'cat /data/file.txt'
+Sun Jul  5 14:37:48 UTC 2020
 ```
 
 You can *manage* them with **volume** and subcommands:
@@ -353,13 +351,13 @@ You can *manage* them with **volume** and subcommands:
 $ docker run -it --rm -v $(pwd):/data busybox sh -c 'date > /data/file.txt'
 
 $ cat file.txt
-Sun Dec 15 20:48:39 UTC 2019
+Sun Jul  5 14:38:15 UTC 2020
 ```
 
 * copy things *in*/*out* using **cp** (needs a *container*)
 
 ```bash
-$ CID=$(docker create --volume dt-vol-n:/data busybox)
+$ CID=$(docker create --volume di-vol-n:/data busybox)
 $ docker cp $CID:/data/file.txt .
 $ docker cp file.txt $CID:/data/file2.txt
 $ docker rm $CID
@@ -372,15 +370,15 @@ $ docker rm $CID
 A road to **micro services**: **create** a *network* and put containers on it
 
 ```bash
-$ docker network create dt-net
+$ docker network create di-net
 
-$ docker run --network dt-net --name dt-nc --rm -it busybox nc -l -p 80
+$ docker run --network di-net --name di-nc --rm -it busybox nc -l -p 80
 ```
 
 you cant talk to it from containers on the same network:
 
 ```bash
-$ docker run -it --rm --network dt-net busybox sh -c 'date | nc dt-nc 80'
+$ docker run -it --rm --network di-net busybox sh -c 'date | nc di-nc 80'
 ```
 
 this will make `date` output appear in the stdout of the first container.
@@ -396,13 +394,13 @@ You can manage networks with **network** and subcommands:
 To make a network service in a container public, you can *publish* a port (`-p`)
 
 ```bash
-$ docker run --name dt-nc --rm -it -p 80 busybox nc -l -p 80
+$ docker run --name di-nc --rm -it -p 80 busybox nc -l -p 80
 ```
 
 You can determine the public `PORT` for example as
 
 ```bash
-$ PORT=$(docker port dt-nc 80 | cut -d : -f 2)
+$ PORT=$(docker port di-nc 80 | cut -d : -f 2)
 ```
 
 and connect to such public address
@@ -413,31 +411,29 @@ $ date | nc 127.0.0.1 $PORT
 
 ---
 
-class: center, middle
+class: title
 
-# A few use cases
+The **Dev** point of view
 
 ---
 
 ## Using docker to compile/run code
 
-* see examples for: C, Java, Python and… PHP.
+* see [examples](https://github.com/mapio/docker-Italiaonline/tree/master/examples/compilation) for: C, Java, Python and… PHP.
 
 ---
 
-## More interesting network topologies
+## Even better, your IDE in a container
 
-Using multiple networks one can split services, let's see an example with:
-
-* a *frontend*,
-* a *balancer*, and
-* a *backend*,
-
-where the first two, and last two are connected, but not the first and last.
+* Using [Remote Development](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.vscode-remote-extensionpack) in [Visual Studio Code](https://code.visualstudio.com/).
 
 ---
 
-## A little bit of orchestration
+class: title
+
+The **Ops** point of view
+
+---
 
 When you have multiple services, you can:
 
@@ -450,9 +446,9 @@ Let's see an example with a chat application, using *redis* for persisetnce.
 
 ---
 
-class: center, middle
+class: title
 
-# A few links…
+Some resources for the voyager
 
 ---
 
