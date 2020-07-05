@@ -12,9 +12,9 @@ denominata [DevOps](https://en.wikipedia.org/wiki/DevOps) (che combina le fasi
 di sviluppo e di messa in esercizio del software) e all'affermarsi delle
 architetture basate su micro-servizi tipiche del cloud.
 
-Questo repository contiene la presentazione e il materiale di supporto
-presentato ad [Italiaonline](https://www.italiaonline.it/) durante il *tech
-talk* del 16 luglio 2020.
+Questo repository contiene la [presentazione](https://doker-iol.surge.sh) e gli
+[esempi](examples) presentati ad [Italiaonline](https://www.italiaonline.it/)
+durante il *tech talk* del 16 luglio 2020.
 
 La presentazione ha riguardato i concetti e gli strumenti fondamentali su cui si
 basa il funzionamento di Docker, con particolare riferimento alla sua utilità
