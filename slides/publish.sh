@@ -1,3 +1,3 @@
 #!/bin/bash
 
-yarn run surge --domain doker-iol.surge.sh .
+yarn run surge --domain docker-iol.surge.sh .
