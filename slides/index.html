@@ -218,6 +218,8 @@ python            3.7-alpine 8922d588eec6 4 weeks ago      98.4MB
 hello-world       latest     c54a2cc56cbb 4 months ago   1.848 kB
 ```
 
+* give a look at [BuildKit](https://docs.docker.com/develop/develop-images/build_enhancements/)
+
 ---
 
 ## Publishing images (*push*)
@@ -432,6 +434,94 @@ The **Dev** point of view
 class: title
 
 The **Ops** point of view
+
+---
+
+## Describe your architecture
+
+* In declarative form using a [compose file](https://docs.docker.com/compose/compose-file/):
+
+```yaml
+services:
+  web:
+    image: mapio/di-example
+    ports:
+      - "80:80"
+    networks:
+      - di-network
+  redis:
+    image: redis
+    volumes:
+      - di-data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - di-network
+
+volumes:
+  di-data:
+
+networks:
+  di-network:
+```
+
+---
+
+## Deploy locally
+
+* Start it using [docker-compose](https://docs.docker.com/compose/)
+
+```bash
+docker-compose up -d
+```
+
+* Inspect it:
+
+```bash
+docker-compose logs
+```
+
+* Stop it:
+
+```bash
+docker-compose down
+```
+
+* You get persitence, somehow…
+
+---
+
+## Setup a swarm
+
+* Setup some iron with a docker and ssh daemon… we'll use [Play with Docker](https://labs.play-with-docker.com/).
+
+* Start a **master** node:
+
+```bash
+node1$ docker swarm init
+To add a worker to this swarm, run the following command:
+
+  docker swarm join --token SWMTKN-1-5ur3q84en…
+```
+
+* Start one (or more) **worker** node(s) (cut and paste the `init` output):
+
+```bash
+node2$ docker swarm join --token SWMTKN-1-5ur3q84en…
+```
+
+* Check that it worked:
+
+```bash
+node1$ docker node ls
+ID           HOSTNAME STATUS AVAILABILITY MANAGER STATUS ENGINE VERSION
+ecqr03l3 *   node1    Ready  Active       Leader         19.03.11
+jt7we9zl     node2    Ready  Active                      19.03.11
+```
+
+---
+
+## Deploy on the swarm
+
 
 ---
 
