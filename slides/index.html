@@ -29,11 +29,17 @@ Introduction
 
 ## Dependency hell
 
-Issues when developing complex software, many:
+Issues when developing complex software, *many*:
 
-* libraries (*polyglot*),
+* languages (*polyglot*),
+* libraries (multiple versions)
 * services (dbms, httpd, cache, log…),
 * people (*onboarding*).
+--
+
+* testing (*fixtures*)
+
+--
 
 Why not let the developers take care of (some) operations aspects?
 
@@ -50,6 +56,8 @@ From the **Dev** point of view:
 * versioning,
 * lightweight.
 
+--
+
 From the **Ops** point of view:
 
 * fault tolerance,
@@ -57,6 +65,10 @@ From the **Ops** point of view:
 * scalability,
 * composability,
 * scheduling & orchestration.
+
+--
+
+And security?
 
 ---
 
@@ -87,6 +99,12 @@ Filesystem
 * AUFS,
 * Device Mapper,
 * BTRFS
+* …
+
+Networking
+
+* Overlay,
+* MacVlan,
 * …
 
 ---
@@ -151,6 +169,8 @@ Take care of your *images* by
 * list (**images**), inspect (**inspect**), remove (**rmi**),
 * **pull**, **push**, **export**, **import**.
 
+--
+
 Take care of your *containers* by
 
 * list (**ps**), inspect (**inspect**), remove (**rm**) — *filesystem*,
@@ -180,12 +200,12 @@ Status: Downloaded newer image for busybox:musl
 * and **commit**!
 
 ```bash
-$ docker commit di-busybox di/busybox:0.1
+$ docker commit di-busybox di-busybox:0.1
 sha256:044aeb8cc3d70516f6a2b387ed9cd17fed276b0ac4065d479deaa53688b01f66
 
 $ docker images
 REPOSITORY   TAG        IMAGE ID     CREATED        VIRTUAL SIZE
-di/busybox   0.1        b57102c04ff0 15 seconds ago 1.213 MB
+di-busybox   0.1        b57102c04ff0 15 seconds ago 1.213 MB
 busybox      musl       733eb3059dce 5 weeks ago    1.213 MB
 ```
 
@@ -327,15 +347,15 @@ class: title
 A road to persistence: just **create** a *volume* with a *name*
 
 ```bash
-$ docker volume create di-vol-n
+$ docker volume create di-volume
 ```
 
 As before, you can (even with *ephemeral* runs), read/write
 
 ```bash
-$ docker run --rm --volume di-vol-n:/data busybox sh -c 'date > /data/file.txt'
+$ docker run --rm --volume di-volume:/data busybox sh -c 'date > /data/file.txt'
 
-$ docker run --rm --volume di-vol-n:/data busybox sh -c 'cat /data/file.txt'
+$ docker run --rm --volume di-volume:/data busybox sh -c 'cat /data/file.txt'
 Sun Jul  5 14:37:48 UTC 2020
 ```
 
@@ -359,7 +379,7 @@ Sun Jul  5 14:38:15 UTC 2020
 * copy things *in*/*out* using **cp** (needs a *container*)
 
 ```bash
-$ CID=$(docker create --volume di-vol-n:/data busybox)
+$ CID=$(docker create --volume di-volume:/data busybox)
 $ docker cp $CID:/data/file.txt .
 $ docker cp file.txt $CID:/data/file2.txt
 $ docker rm $CID
@@ -369,18 +389,18 @@ $ docker rm $CID
 
 ## Communication (*guest* space)
 
-A road to **micro services**: **create** a *network* and put containers on it
+A road to *micro services*: **create** a *network* and put containers on it
 
 ```bash
-$ docker network create di-net
+$ docker network create di-network
 
-$ docker run --network di-net --name di-nc --rm -it busybox nc -l -p 80
+$ docker run --network di-network --name di-nc --rm -it busybox nc -l -p 80
 ```
 
 you cant talk to it from containers on the same network:
 
 ```bash
-$ docker run -it --rm --network di-net busybox sh -c 'date | nc di-nc 80'
+$ docker run -it --rm --network di-network busybox sh -c 'date | nc di-nc 80'
 ```
 
 this will make `date` output appear in the stdout of the first container.
@@ -437,31 +457,30 @@ The **Ops** point of view
 
 ---
 
-## Describe your architecture
+## Describe your services
 
 * In declarative form using a [compose file](https://docs.docker.com/compose/compose-file/):
 
 ```yaml
 services:
+
   web:
     image: mapio/di-example
     ports:
-      - "80:80"
+      - target: 80
+        published: 80
     networks:
       - di-network
+
   redis:
     image: redis
-    volumes:
-      - di-data:/data
     command: redis-server --appendonly yes
     networks:
       - di-network
-
-volumes:
-  di-data:
-
-networks:
-  di-network:
+    volumes:
+      - type: volume
+        source: di-data
+        target: /data
 ```
 
 ---
@@ -523,16 +542,47 @@ jt7we9zl     node2    Ready  Active                      19.03.11
 ## Deploy on the swarm
 
 
+* Start a *stack*
+
+```bash
+$ docker stack deploy -c docker-swarm.yml app
+```
+
+* Show its *services* of a stack
+
+```bash
+docker stack services app
+```
+
+* Show the *tasks* of a stack
+
+```bash
+docker stack ps app
+```
+
+* Monitor a service
+
+```bash
+docker service logs app_web
+```
+
+* Shut down a stack
+
+```bash
+$ docker stack rm app
+```
+
 ---
 
-When you have multiple services, you can:
+## UI Monitoring tools
 
-* use *YML* to descrive a complex *configuration*,
-* *delpoy* it on a set of *nodes*
+* [Docker Swarm Visualizer](https://github.com/dockersamples/docker-swarm-visualizer) (beware: *toy app*).
 
-The **swarm**, **service** and **stack** commands come to the rescue...
+* [Portainer](https://www.portainer.io/).
 
-Let's see an example with a chat application, using *redis* for persisetnce.
+---
+
+## Scaling and updating
 
 ---
 
