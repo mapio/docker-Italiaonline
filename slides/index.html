@@ -541,7 +541,6 @@ jt7we9zl     node2    Ready  Active                      19.03.11
 
 ## Deploy on the swarm
 
-
 * Start a *stack*
 
 ```bash
@@ -583,6 +582,20 @@ $ docker stack rm app
 ---
 
 ## Scaling and updating
+
+* Scaling (if the app architecture allows for it) is easy:
+
+```bash
+$ docker service scale app_web=5
+```
+
+* Updating (to a newer image) is also straightforward:
+
+```bash
+docker service update --image mapio/di-app:latest app_web
+```
+
+* Both operation are available using Portainer…
 
 ---
 
