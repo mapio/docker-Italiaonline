@@ -1,3 +1,5 @@
+.envrc
 slides/node_modules/
 slides/package.json
 slides/yarn.lock
+urls.md
